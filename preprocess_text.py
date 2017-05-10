@@ -1,7 +1,8 @@
 import nltk
 import gensim
 from nltk.tokenize import word_tokenize
-
+import numpy as np
+import pandas as pd
 
 def tokenize_a_doc(s):
     try:
@@ -10,16 +11,9 @@ def tokenize_a_doc(s):
         tok = ""
     return tok
 
-def vectorize_text(L):
-    vect = []
-    for w in L:
-        i = wdic.get(w)
-        if i is not None:
-            vect.append(i)
-        else:
-            vect.append(0)
-    return vect
-
+def vectorize_text(wordlist,wdic):
+    return [wdic.get(word) if wdic.get(word) is not None else 0 for word in wordlist]
+    
 '''
 # Arguments
     x: numpy array of text data that wants to be modelled
@@ -57,7 +51,7 @@ class Preprocess_text:
             words.extend(gensimmodel.wv.vocab.keys())
 
             vecs0 = np.repeat(0,self.word_dim)
-            self.vecs = np.vstack(map(lambda w: gensimmodel[w], gensimmodel.wv.vocab.keys()))
+            vecs = np.vstack(map(lambda w: gensimmodel[w], gensimmodel.wv.vocab.keys()))
             self.vectors = np.vstack([vecs0,vecs])
             self.words = words
             np.savez("word2vec"+self.name+".npz",vectors = self.vectors, words = self.words)
@@ -69,8 +63,8 @@ class Preprocess_text:
             
     def vectorize_text(self):
         words = self.words
-        wdic = dict(list(zip(words, list(range(0, len(words))))))
-        self.df['vectorized'] = df.tokenized.map(vectorize_text)
+        wdic = {word: i for i, word in enumerate(words)} 
+        self.df['vectorized'] = self.df.tokenized.map(lambda x: vectorize_text(x,wdic))
         
     def run_all(self):
         self.tokenize_text()
