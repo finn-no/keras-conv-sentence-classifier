@@ -1,9 +1,12 @@
 from __future__ import print_function
 import keras
 from keras.layers import Dense, Dropout
+from keras.preprocessing.sequence import pad_sequences
+from keras.utils import to_categorical
 from keras.layers.embeddings import Embedding
 from keras.models import Model
 from keras.layers import Input, merge
+from keras.layers.merge import Concatenate
 from keras.layers.core import *
 from keras.layers.convolutional import Conv1D
 from keras.layers.pooling import MaxPooling1D
@@ -32,17 +35,19 @@ def KernelBlock(x, max_doc_length, kernel_name, kernel_size_start=3, num_kernels
     https://arxiv.org/pdf/1408.5882.pdf
 """
 class CNNSentence:
-    def __init__(self, max_doc_length, output_name_size={}, kernel_size_start=2, regularization="batch_norm",
+    def __init__(self, max_doc_length, num_inputs, output_name_size={}, kernel_size_start=2, regularization="batch_norm",
                  embedding_vectors=[[0]]):
-        self.output_sizes = output_name_size
+        self.output_name_size = output_name_size
         self.regularization = regularization
         self.dropout = 0.3
         self.output_layers = []
-        self.model = self.create_model(max_doc_length, kernel_size_start, embedding_vectors)
+        self.input_layers = []
+        self.model = self.create_model(num_inputs, max_doc_length, kernel_size_start, embedding_vectors)
 
-    def create_model(self, max_doc_length, kernel_size_start, embedding_vectors, num_features=500):
-        inp = Input(shape=(max_doc_length,))
-        x = Embedding(input_dim=len(embedding_vectors), output_dim=200, weights=[embedding_vectors], name="embeddings")(inp)
+    def create_model(self, num_inputs, max_doc_length, kernel_size_start, embedding_vectors, num_features=500):
+        self.input_layers = [Input(shape=(max_doc_length,)) for i in range(num_inputs)]
+        merged_inputs = Concatenate()(self.input_layers)
+        x = Embedding(input_dim=len(embedding_vectors), output_dim=len(embedding_vectors[0]), weights=[embedding_vectors], name="embeddings")(merged_inputs)
 
         concat_layer = KernelBlock(x, max_doc_length=max_doc_length, kernel_size_start=kernel_size_start, kernel_name="flat_kernels")
 
@@ -52,6 +57,6 @@ class CNNSentence:
             x = BatchNormalization()(feature_layer)
         else:
             x = Dropout(self.dropout)(feature_layer)
-        for name, out_size in self.output_sizes.iteritems():
+        for name, out_size in self.output_name_size.items():
             self.output_layers.append(Dense(out_size, name=name, activation="softmax")(x))
-        return Model(inp, self.output_layers)
+        return Model(self.input_layers, self.output_layers)
