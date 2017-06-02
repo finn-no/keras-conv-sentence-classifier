@@ -4,12 +4,17 @@ from nltk.tokenize import word_tokenize
 import numpy as np
 import pandas as pd
 
+from bs4 import BeautifulSoup
+from HTMLParser import HTMLParser
+
 def tokenize_a_doc(s):
     try:
-        tok = word_tokenize(' '.join(s.split(" ")).lower())
+        text = BeautifulSoup((s)).get_text()
+        unescaped = HTMLParser().unescape(text)
+        tok = word_tokenize(' '.join(unescaped.split(" ")).lower())
+        return tok
     except:
-        tok = ""
-    return tok
+        return ""
 
 def vectorize_string(wordlist,wdic):
     return [wdic.get(word) if wdic.get(word) is not None else 0 for word in wordlist]
@@ -32,7 +37,7 @@ class Preprocess_text:
         self.word2vec_path = word2vec_path
         self.word_dim = word_dim
         self.w2v_workers = w2v_workers
-        
+
     def tokenize_text(self):
         self.df['tokenized'] = self.df.text.map(tokenize_a_doc)
         
