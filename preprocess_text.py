@@ -7,15 +7,19 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from HTMLParser import HTMLParser
 
-def tokenize_a_doc(s):
+def tokenize_a_doc(s, hook_func=None):
+    if hook_func is not None:
+        s = hook_func(s)
+    return word_tokenize(' '.join(s.split(" ")).lower())
+
+def parse_html(s):
     try:
         text = BeautifulSoup((s)).get_text()
         unescaped = HTMLParser().unescape(text)
-        tok = word_tokenize(' '.join(unescaped.split(" ")).lower())
-        return tok
+        return unescaped
     except:
         return ""
-
+    
 def vectorize_string(wordlist,wdic):
     return [wdic.get(word) if wdic.get(word) is not None else 0 for word in wordlist]
     
@@ -29,17 +33,18 @@ def vectorize_string(wordlist,wdic):
 '''
 
 class Preprocess_text:
-    def __init__(self,x,name="textdata",word2vec_path=None, word_dim=50,w2v_workers=3):
+    def __init__(self,x,name="textdata",word2vec_path=None, word_dim=50,w2v_workers=3,parse_func=None):
         # Download nltk data if it doesnt exist
         nltk.download('punkt')
         self.name = name
+        self.parse_func = parse_func
         self.df = pd.DataFrame(x,columns=["text"])
         self.word2vec_path = word2vec_path
         self.word_dim = word_dim
         self.w2v_workers = w2v_workers
 
     def tokenize_text(self):
-        self.df['tokenized'] = self.df.text.map(tokenize_a_doc)
+            self.df['tokenized'] = self.df.text.map(lambda s: tokenize_a_doc(s,hook_func=self.parse_func))
         
     def word2vec_init(self,word_dim = 50):
         if self.word2vec_path is None:
