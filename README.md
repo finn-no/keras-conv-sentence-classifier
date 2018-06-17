@@ -3,7 +3,7 @@
 Finn.no Keras implementation of [Convolutional Neural Networks for Sentence Classification” based architecture](https://arxiv.org/pdf/1408.5882.pdf).
 
 ## Finn.no usage
-Blog post COMING SOON
+[Deep NLP-based Recommenders at Finn.no](http://tech.finn.no/2017/09/08/NLP-based-recommenders-at-finn/)
 
 ## Word-embeddings
 COMING SOON
